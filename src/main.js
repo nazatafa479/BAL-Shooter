@@ -28,6 +28,39 @@ async function boot() {
       console.log("Canvas moved to container");
     }
 
+    // On mobile devices, make the canvas capture touches and disable
+    // browser gestures (scroll, pinch) that can prevent in-game touch
+    // input from reaching the engine. Also hide any loading overlay so
+    // it doesn't capture touches on top of the canvas.
+    function enableMobileTouchSupport(canvas) {
+      if (!canvas) return;
+      // Prevent system gestures and selection
+      canvas.style.touchAction = 'none';
+      canvas.style.msTouchAction = 'none';
+      canvas.style.webkitUserSelect = 'none';
+      canvas.style.userSelect = 'none';
+      canvas.style.webkitTapHighlightColor = 'rgba(0,0,0,0)';
+
+      // Some Android browsers require passive:false listeners to allow
+      // preventDefault() to work on touch events.
+      canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+      canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+      canvas.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+
+      // Also prevent document-level scroll on mobile, just while game is
+      // active. This is a defensive fallback when canvas doesn't receive
+      // the event (e.g. when zoom/gesture overlays are present).
+      document.body.style.overflow = 'hidden';
+      const loading = document.getElementById('loading');
+      if (loading) {
+        // Force hide so it doesn't intercept touches
+        loading.style.pointerEvents = 'none';
+        loading.style.display = 'none';
+      }
+    }
+
+    enableMobileTouchSupport(k.canvas);
+
     // Prevent default touch behaviors
     document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     document.addEventListener('gesturestart', (e) => e.preventDefault());
