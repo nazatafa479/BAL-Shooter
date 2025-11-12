@@ -1,3 +1,5 @@
+import { addLogo } from "../utils/logo.js";
+
 export function createGameScene(k, gameState) {
   k.scene("game", () => {
     const config = gameState.playerConfig;
@@ -49,70 +51,44 @@ export function createGameScene(k, gameState) {
       }
     ]);
 
-    // Try to use custom sprite for player
-    let playerDetail;
-    let hasCustomSprite = false;
-    
-    try {
-      const spriteCheck = k.getSprite(config.id);
-      if (spriteCheck) {
-        playerDetail = k.add([
-          k.sprite(config.id),
-          k.pos(k.width() / 2, k.height() - 80),
-          k.anchor("center"),
-          k.z(11),
-          "playerDetail"
-        ]);
-        
-        // Scale to consistent size
-        if (spriteCheck.width && spriteCheck.height) {
-          const scale = Math.min(playerSize / spriteCheck.width, playerSize / spriteCheck.height);
-          playerDetail.scale = k.vec2(scale, scale);
-        } else {
-          playerDetail.scale = k.vec2(0.6, 0.6);
+    // Standardized player visual using addLogo helper
+    const playerDetail = addLogo({
+      k,
+      spriteKey: config.id,
+      x: k.width() / 2,
+      y: k.height() - 80,
+      maxW: playerSize,
+      maxH: playerSize,
+      z: 11,
+      color: config.color,
+      fallbackId: config.id
+      ,
+      isDynamic: true
+    });
+    const playerLogoEntities = playerDetail || [];
+    // Keep any returned logo entities synchronized with the player shape size/position
+    playerLogoEntities.forEach((ent) => {
+      if (!ent) return;
+      ent.pos = playerShape.pos.clone();
+      ent.onUpdate(() => {
+        ent.pos = playerShape.pos.clone();
+        try {
+          const spr = k.getSprite(config.id);
+          const w = spr?.width ?? spr?.w ?? spr?.data?.width ?? spr?.data?.w ?? spr?.data?.frames?.[0]?.w ?? spr?.data?.frames?.[0]?.width;
+          const h = spr?.height ?? spr?.h ?? spr?.data?.height ?? spr?.data?.h ?? spr?.data?.frames?.[0]?.h ?? spr?.data?.frames?.[0]?.height;
+          if (w && h) {
+            const scale = Math.min(playerShape.width / w, playerShape.height / h);
+            ent.scale = k.vec2(scale, scale);
+          } else {
+            const scale = Math.min(playerShape.width / playerSize, playerShape.height / playerSize);
+            ent.scale = k.vec2(scale, scale);
+          }
+        } catch (err) {
+          const scale = Math.min(playerShape.width / playerSize, playerShape.height / playerSize);
+          ent.scale = k.vec2(scale, scale);
         }
-        hasCustomSprite = true;
-      }
-    } catch (e) {
-      // No custom sprite available
-    }
-    
-    // Fallback to party logo if no custom image
-    if (!hasCustomSprite) {
-      if (config.id === "ncp") {
-        playerDetail = k.add([
-          k.polygon([
-            k.vec2(0, -10), k.vec2(3, -3), k.vec2(10, -3),
-            k.vec2(4, 1), k.vec2(7, 8), k.vec2(0, 4),
-            k.vec2(-7, 8), k.vec2(-4, 1), k.vec2(-10, -3), k.vec2(-3, -3)
-          ]),
-          k.pos(k.width() / 2, k.height() - 80),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(11),
-          "playerDetail"
-        ]);
-      } else if (config.id === "bnp") {
-        playerDetail = k.add([
-          k.rect(6, 20),
-          k.pos(k.width() / 2, k.height() - 80),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(11),
-          "playerDetail"
-        ]);
-      } else {
-        playerDetail = k.add([
-          k.circle(8),
-          k.pos(k.width() / 2 + 2, k.height() - 80),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(11),
-          "playerDetail"
-        ]);
-      }
-    }
-
+      });
+    });
     const player = playerShape;
 
     // Engine trail effect
@@ -433,43 +409,32 @@ export function createGameScene(k, gameState) {
         }
       ]);
 
-      // Try to use custom BAL sprite with consistent sizing
-      let enemySprite = null;
-      const enemySize = 40;
-      const spriteCheck = k.getSprite("bal-enemy");
-      
-      if (spriteCheck) {
-        enemySprite = k.add([
-          k.sprite("bal-enemy"),
-          k.pos(pos),
-          k.anchor("center"),
-          k.z(9)
-        ]);
-        
-        // Scale to consistent size
-        if (spriteCheck.width && spriteCheck.height) {
-          const scale = Math.min(enemySize / spriteCheck.width, enemySize / spriteCheck.height);
-          enemySprite.scale = k.vec2(scale, scale);
-        } else {
-          enemySprite.scale = k.vec2(0.5, 0.5);
-        }
-      } else {
-        // Fallback to BAL text
-        enemySprite = k.add([
-          k.text("BAL", { size: 12 }),
-          k.pos(pos),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(9)
-        ]);
-      }
+      // Standardized enemy visual using addLogo helper
+      const enemySprite = addLogo({
+        k,
+        spriteKey: "bal-enemy",
+        x: pos.x,
+        y: pos.y,
+        maxW: 40,
+        maxH: 40,
+        z: 9,
+        color: "#ffffff",
+        fallbackId: "bal-enemy"
+        ,
+        isDynamic: true
+      });
 
-      enemySprite.onUpdate(() => {
-        if (enemy.exists()) {
-          enemySprite.pos = enemy.pos;
-        } else {
-          k.destroy(enemySprite);
-        }
+      const enemyLogoEntities = enemySprite || [];
+      enemyLogoEntities.forEach((ent) => {
+        if (!ent) return;
+        ent.pos = enemy.pos.clone();
+        ent.onUpdate(() => {
+          if (enemy.exists()) {
+            ent.pos = enemy.pos.clone();
+          } else {
+            k.destroy(ent);
+          }
+        });
       });
 
       // Enemy health bar

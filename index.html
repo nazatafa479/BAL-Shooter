@@ -7,6 +7,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Attack on BAL - Kaboom Shooter</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico">
+    <link rel="mask-icon" href="/favicon.svg" color="#ff5555">
     <style>
         * {
             margin: 0;
@@ -107,6 +110,36 @@
         <div>Loading Attack on BAL...</div>
     </div>
     <div id="game-container"></div>
-    <script type="module" src="/src/main.js"></script>
+        <script type="module" src="/src/main.js"></script>
+        <script>
+            // Fallback loader-hider: ensures the loading overlay doesn't stick
+            (function(){
+                function hide() {
+                    var el = document.getElementById('loading');
+                    if (el) el.classList.add('hidden');
+                }
+                // Hide shortly after DOM is ready
+                if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                    setTimeout(hide, 1500);
+                } else {
+                    document.addEventListener('DOMContentLoaded', function(){ setTimeout(hide, 1500); });
+                }
+                // Also hide after full load
+                window.addEventListener('load', function(){ setTimeout(hide, 1000); });
+                // If errors happen, show a brief message then hide
+                window.addEventListener('error', function(){
+                    var el = document.getElementById('loading');
+                    if (el) el.innerHTML = '<div style="color:#fff;padding:12px;text-align:center">App error. Check console.</div>';
+                    setTimeout(hide, 2500);
+                });
+                window.addEventListener('unhandledrejection', function(){
+                    var el = document.getElementById('loading');
+                    if (el) el.innerHTML = '<div style="color:#fff;padding:12px;text-align:center">App error. Check console.</div>';
+                    setTimeout(hide, 2500);
+                });
+                // Final failsafe: hide after 4s no matter what
+                setTimeout(hide, 4000);
+            })();
+        </script>
 </body>
 </html>

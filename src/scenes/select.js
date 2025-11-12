@@ -1,4 +1,5 @@
 import { CHARACTERS } from "../assets.js";
+import { addLogo } from "../utils/logo.js";
 
 export function createSelectScene(k, gameState) {
   k.scene("select", () => {
@@ -89,90 +90,19 @@ export function createSelectScene(k, gameState) {
         { pulseTime: 0 }
       ]);
 
-      // Try to load custom sprite, fallback to party logo/symbol
-      const spriteKey = char.id;
-      let customSprite = null;
-      
-      try {
-        // Check if sprite exists by trying to get it
-        const hasSprite = k.getSprite(spriteKey);
-        if (hasSprite) {
-          customSprite = k.add([
-            k.sprite(spriteKey),
-            k.pos(cardX + cardWidth / 2, cardY + 70),
-            k.anchor("center"),
-            k.scale(1),
-            k.z(7),
-            { maxWidth: 60, maxHeight: 60 }
-          ]);
-          
-          // Ensure consistent size
-          const spriteData = hasSprite;
-          if (spriteData && spriteData.width && spriteData.height) {
-            const scale = Math.min(60 / spriteData.width, 60 / spriteData.height);
-            customSprite.scale = k.vec2(scale, scale);
-          }
-        }
-      } catch (e) {
-        // Sprite doesn't exist, will use fallback
-      }
-      
-      // If no custom sprite loaded, use default symbols
-      if (!customSprite) {
-        if (char.id === "ncp") {
-          // NCP - Green with star
-          k.add([
-            k.polygon([
-              k.vec2(0, -15), k.vec2(4, -5), k.vec2(15, -5),
-              k.vec2(6, 2), k.vec2(10, 12), k.vec2(0, 6),
-              k.vec2(-10, 12), k.vec2(-6, 2), k.vec2(-15, -5), k.vec2(-4, -5)
-            ]),
-            k.pos(cardX + cardWidth / 2, cardY + 70),
-            k.anchor("center"),
-            k.color(255, 255, 255),
-            k.z(7)
-          ]);
-        } else if (char.id === "bnp") {
-          // BNP - Orange with wheat sheaf
-          k.add([
-            k.rect(8, 30),
-            k.pos(cardX + cardWidth / 2, cardY + 70),
-            k.anchor("center"),
-            k.color(255, 255, 255),
-            k.z(7)
-          ]);
-          k.add([
-            k.circle(6),
-            k.pos(cardX + cardWidth / 2 - 8, cardY + 58),
-            k.anchor("center"),
-            k.color(255, 255, 255),
-            k.z(7)
-          ]);
-          k.add([
-            k.circle(6),
-            k.pos(cardX + cardWidth / 2 + 8, cardY + 58),
-            k.anchor("center"),
-            k.color(255, 255, 255),
-            k.z(7)
-          ]);
-        } else if (char.id === "jamat") {
-          // Jamat - Brown with crescent
-          k.add([
-            k.circle(12),
-            k.pos(cardX + cardWidth / 2 + 3, cardY + 70),
-            k.anchor("center"),
-            k.color(255, 255, 255),
-            k.z(7)
-          ]);
-          k.add([
-            k.circle(10),
-            k.pos(cardX + cardWidth / 2 + 7, cardY + 70),
-            k.anchor("center"),
-            k.color(k.Color.fromHex(char.color)),
-            k.z(8)
-          ]);
-        }
-      }
+      // Add logo (sprite or fallback) - make sure it fits within 60x60 box
+      const logos = addLogo({
+        k,
+        spriteKey: char.id,
+        x: cardX + cardWidth / 2,
+        y: cardY + 70,
+        maxW: 60,
+        maxH: 60,
+        z: 7,
+        color: char.color,
+        fallbackId: char.id,
+        isDynamic: true,
+      });
 
       // Pulse animation
       charVisual.onUpdate(() => {
@@ -180,6 +110,29 @@ export function createSelectScene(k, gameState) {
         const pulse = Math.sin(charVisual.pulseTime) * 2;
         charVisual.width = 60 + pulse;
         charVisual.height = 60 + pulse;
+        // Keep logo(s) positioned and sized to the rectangle
+        logos?.forEach((logoEnt) => {
+          if (!logoEnt) return;
+          // Keep centered
+          logoEnt.pos = charVisual.pos.clone();
+          // Attempt to scale based on sprite size, fallback to baseSize (30)
+          try {
+            const spr = k.getSprite(char.id);
+            const w = spr?.width ?? spr?.w ?? spr?.data?.width ?? spr?.data?.w ?? spr?.data?.frames?.[0]?.w ?? spr?.data?.frames?.[0]?.width;
+            const h = spr?.height ?? spr?.h ?? spr?.data?.height ?? spr?.data?.h ?? spr?.data?.frames?.[0]?.h ?? spr?.data?.frames?.[0]?.height;
+            if (w && h) {
+              const scale = Math.min(charVisual.width / w, charVisual.height / h);
+              logoEnt.scale = k.vec2(scale, scale);
+            } else {
+              // fallback scale, baseSize 30
+              const scale = Math.min(charVisual.width / 30, charVisual.height / 30);
+              logoEnt.scale = k.vec2(scale, scale);
+            }
+          } catch (err) {
+            const scale = Math.min(charVisual.width / 30, charVisual.height / 30);
+            logoEnt.scale = k.vec2(scale, scale);
+          }
+        });
       });
 
       // Character name

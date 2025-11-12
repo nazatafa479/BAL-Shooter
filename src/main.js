@@ -1,111 +1,58 @@
-import kaboom from "kaboom";
-import { createSelectScene } from "./scenes/select.js";
-import { createGameScene } from "./scenes/game.js";
+import { initKaboom } from "./engine/k.js";
+import { registerScenes } from "./scenes/index.js";
+import { preloadSprites } from "./assetsLoader.js";
 
 console.log("Game initializing...");
 
 // Global player configuration - set by character selection
-export const gameState = {
-  playerConfig: null
-};
+export const gameState = { playerConfig: null };
 
-// Calculate responsive size
-function getGameSize() {
-  const maxWidth = 800;
-  const maxHeight = 600;
-  const aspectRatio = maxWidth / maxHeight;
-  
-  const containerWidth = window.innerWidth;
-  const containerHeight = window.innerHeight;
-  
-  let width = maxWidth;
-  let height = maxHeight;
-  
-  // Scale down for smaller screens
-  if (containerWidth < maxWidth || containerHeight < maxHeight) {
-    width = Math.min(containerWidth, maxWidth);
-    height = width / aspectRatio;
-    
-    // If height exceeds container, scale by height instead
-    if (height > containerHeight) {
-      height = containerHeight;
-      width = height * aspectRatio;
-    }
-  }
-  
-  return { 
-    width: Math.floor(width), 
-    height: Math.floor(height),
-    scale: Math.min(width / maxWidth, 1)
-  };
-}
-
-const size = getGameSize();
-console.log("Game size calculated:", size);
-
-// Get or create the game container
-const gameContainer = document.getElementById('game-container');
-if (!gameContainer) {
-  console.error("Game container not found!");
-}
-
-// Initialize Kaboom
-const k = kaboom({
-  width: 800,
-  height: 600,
-  background: [20, 20, 40],
-  scale: size.scale,
-  crisp: true,
-  touchToMouse: true,
-  global: false,
-  canvas: gameContainer ? undefined : document.querySelector('canvas')
-});
-
+// Initialize Kaboom with a dedicated canvas inside #game-container
+const k = initKaboom();
 console.log("Kaboom initialized");
 
-// Ensure canvas is in the container
-if (gameContainer && k.canvas) {
-  gameContainer.appendChild(k.canvas);
-  console.log("Canvas added to container");
+// Move the canvas to our container
+const container = document.getElementById("game-container");
+if (container && k.canvas) {
+  container.appendChild(k.canvas);
+  console.log("Canvas moved to container");
 }
 
-// Load custom character images with error handling
-const imageSize = 64; // Standard size for all images
+// Prevent default touch behaviors
+document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+document.addEventListener('gesturestart', (e) => e.preventDefault());
 
-k.loadRoot("/");
-console.log("Load root set to /");
-
-// Load sprites with proper error handling
-const loadSpriteWithFallback = (name, path) => {
+async function boot() {
   try {
-    k.loadSprite(name, path);
-    console.log(`Loading sprite: ${name} from ${path}`);
-  } catch (e) {
-    console.log(`${name} sprite not found, will use default shapes`);
+    // Preload assets before creating scenes
+    await preloadSprites(k);
+    console.log("Sprite preloading finished");
+
+    // Register both scenes
+    registerScenes(k, gameState);
+    console.log("Scenes registered");
+
+    // Go to character selection
+    k.go("select");
+    console.log("Game started - select scene");
+  } catch (error) {
+    console.error("Boot error:", error);
+    const loading = document.getElementById('loading');
+    if (loading) loading.innerHTML = `<div>Error loading game: ${error?.message || error}</div>`;
+  } finally {
+    // Hide loading screen regardless
+    const loading = document.getElementById('loading');
+    if (loading) loading.classList.add('hidden');
   }
-};
-
-loadSpriteWithFallback("ncp", "/ncp.png");
-loadSpriteWithFallback("bnp", "/bnp.png");
-loadSpriteWithFallback("jamat", "/jamat.png");
-loadSpriteWithFallback("bal-enemy", "/bal-enemy.png");
-
-console.log("Sprites loaded");
-
-// Register scenes
-try {
-  createSelectScene(k, gameState);
-  createGameScene(k, gameState);
-  console.log("Scenes registered");
-} catch (error) {
-  console.error("Error creating scenes:", error);
-  // Hide loading screen even if there's an error
-  const loading = document.getElementById('loading');
-  if (loading) {
-    loading.innerHTML = `<div>Error loading game: ${error.message}</div>`;
-  }
-  throw error;
 }
+
+// Try to hide loading eventually even if something stalls
+setTimeout(() => {
+  const loading = document.getElementById('loading');
+  if (loading) loading.classList.add('hidden');
+}, 2000);
+
+boot();
 
 // Prevent default touch behaviors
 if (typeof document !== 'undefined') {
