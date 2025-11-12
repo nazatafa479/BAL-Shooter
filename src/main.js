@@ -7,16 +7,9 @@ console.log("Game initializing...");
 // Global player configuration - set by character selection
 export const gameState = { playerConfig: null };
 
-// Initialize Kaboom with a dedicated canvas inside #game-container
-const k = initKaboom();
-console.log("Kaboom initialized");
-
-// Move the canvas to our container
-const container = document.getElementById("game-container");
-if (container && k.canvas) {
-  container.appendChild(k.canvas);
-  console.log("Canvas moved to container");
-}
+// k will be initialized in boot(); other modules can import default
+// and will get the assigned value after initialization.
+export let k;
 
 // Prevent default touch behaviors
 document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
@@ -24,6 +17,21 @@ document.addEventListener('gesturestart', (e) => e.preventDefault());
 
 async function boot() {
   try {
+    // Initialize Kaboom after we've applied any global shims
+    k = await initKaboom();
+    console.log("Kaboom initialized");
+
+    // Move the canvas to our container
+    const container = document.getElementById("game-container");
+    if (container && k.canvas) {
+      container.appendChild(k.canvas);
+      console.log("Canvas moved to container");
+    }
+
+    // Prevent default touch behaviors
+    document.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+    document.addEventListener('gesturestart', (e) => e.preventDefault());
+
     // Preload assets before creating scenes
     await preloadSprites(k);
     console.log("Sprite preloading finished");
@@ -65,13 +73,7 @@ if (typeof document !== 'undefined') {
   });
 }
 
-// Start with character selection
-try {
-  k.go("select");
-  console.log("Game started - select scene");
-} catch (error) {
-  console.error("Error starting game:", error);
-}
+// Note: Scene start is handled in boot() after Kaboom is initialized.
 
 // Hide loading screen after game is ready
 // Use both setTimeout and immediate check as fallback

@@ -270,8 +270,13 @@ export function createGameScene(k, gameState) {
       // Lock to bottom area
       player.pos.y = k.height() - 80;
 
-      // Update player detail position
-      playerDetail.pos = player.pos;
+      // Update player detail(s) position
+      playerLogoEntities.forEach((ent) => {
+        if (!ent) return;
+        if (typeof ent.exists === 'function' ? ent.exists() : true) {
+          ent.pos = player.pos;
+        }
+      });
 
       // Update fire cooldown
       if (player.fireCooldown > 0) {
@@ -462,10 +467,13 @@ export function createGameScene(k, gameState) {
         // Move downward
         enemy.move(k.vec2(0, 1).scale(enemy.speed));
 
-        // Update label position
-        if (enemySprite.exists()) {
-          enemySprite.pos = enemy.pos;
-        }
+          // Update label position for all logo entities
+          enemyLogoEntities.forEach((ent) => {
+            if (!ent) return;
+            if (typeof ent.exists === 'function' ? ent.exists() : true) {
+              ent.pos = enemy.pos;
+            }
+          });
 
         // Update health bar
         if (enemyHealthBg.exists() && enemyHealthBar.exists()) {
@@ -483,7 +491,10 @@ export function createGameScene(k, gameState) {
 
       // Cleanup when enemy is destroyed
       enemy.onDestroy(() => {
-        if (enemySprite.exists()) k.destroy(enemySprite);
+        enemyLogoEntities.forEach((ent) => {
+          if (!ent) return;
+          if (typeof ent.exists === 'function' ? ent.exists() : true) k.destroy(ent);
+        });
         if (enemyHealthBg.exists()) k.destroy(enemyHealthBg);
         if (enemyHealthBar.exists()) k.destroy(enemyHealthBar);
       });
@@ -645,9 +656,12 @@ export function createGameScene(k, gameState) {
     function gameOver() {
       paused = true;
       
-      // Destroy player
+      // Destroy player and its logo entities
       k.destroy(player);
-      k.destroy(playerDetail);
+      playerLogoEntities.forEach((ent) => {
+        if (!ent) return;
+        if (typeof ent.exists === 'function' ? ent.exists() : true) k.destroy(ent);
+      });
       spawnExplosion(player.pos, k.Color.fromHex(config.color));
 
       k.add([
