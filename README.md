@@ -46,24 +46,29 @@ No environment variables needed! The game works out of the box.
 
 The game is fully mobile-friendly with:
 - ✅ Responsive layout that adapts to screen size
-- ✅ Touch controls for slider and fire button
+- ✅ **Touch controls: Slide to move, Tap to fire**
 - ✅ Optimized for both portrait and landscape
 - ✅ Prevents pull-to-refresh on mobile browsers
 - ✅ No scrolling or zooming issues
 
 ## 🎮 How to Play
 
-### Desktop Controls:
+### Mobile/Touch Controls (Primary):
+- **SLIDE your finger** - Move character left/right (anywhere on lower screen)
+- **TAP the screen** - Fire weapon (quick tap anywhere)
+- Works on phones, tablets, and touch-enabled laptops!
+
+### Desktop Controls (Keyboard):
 - **A/D or Arrow Keys** - Move left/right
 - **Space** - Shoot
-- **Mouse** - Use slider or click fire button
 - **P** - Pause
 - **R** - Restart (after game over)
 
-### Mobile Controls:
-- **Slider** - Drag to move character left/right
-- **FIRE button** - Tap to shoot
-- **P** on virtual keyboard - Pause
+### Desktop Controls (Mouse):
+- **Click & Drag** - Move character (slide motion)
+- **Quick Click** - Fire weapon (tap motion)
+
+> **Note**: The old slider and fire button have been replaced with intuitive touch gestures for a cleaner, more mobile-friendly experience!
 
 ## 🛠️ Local Development
 

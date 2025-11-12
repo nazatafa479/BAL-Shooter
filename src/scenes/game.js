@@ -183,141 +183,59 @@ export function createGameScene(k, gameState) {
       "ui"
     ]);
 
-    // FIRE BUTTON - visible on screen (mobile-friendly)
-    const fireButtonSize = k.width() < 600 ? 50 : 40;
-    const fireButton = k.add([
-      k.circle(fireButtonSize),
-      k.pos(k.width() - fireButtonSize - 30, k.height() - fireButtonSize - 30),
-      k.anchor("center"),
-      k.color(255, 80, 80),
-      k.area(),
-      k.outline(4, k.rgb(255, 150, 150)),
-      k.z(100),
-      "fireButton"
+    // TOUCH CONTROLS - Slide to move, Tap to fire
+    let touchStartX = null;
+    let touchStartY = null;
+    let isTouchMoving = false;
+    let lastTouchPos = null;
+    const touchMoveThreshold = 10; // pixels to distinguish tap from slide
+
+    // Visual indicator for touch control zone (lower half of screen)
+    const controlZone = k.add([
+      k.rect(k.width(), k.height() / 2),
+      k.pos(0, k.height() / 2),
+      k.color(0, 0, 0),
+      k.opacity(0.1),
+      k.z(50),
+      "controlZone"
     ]);
 
+    // Touch control hint
     k.add([
-      k.text("FIRE", { size: k.width() < 600 ? 18 : 16 }),
-      k.pos(k.width() - fireButtonSize - 30, k.height() - fireButtonSize - 30),
-      k.anchor("center"),
-      k.color(255, 255, 255),
-      k.z(101),
-      "ui"
-    ]);
-
-    // Fire button interaction
-    fireButton.onClick(() => {
-      if (!paused) shoot();
-    });
-
-    fireButton.onHoverUpdate(() => {
-      fireButton.color = k.rgb(255, 120, 120);
-      k.setCursor("pointer");
-    });
-
-    fireButton.onHoverEnd(() => {
-      fireButton.color = k.rgb(255, 80, 80);
-      k.setCursor("default");
-    });
-
-    // SLIDER CONTROL - for moving character left/right (responsive)
-    const sliderWidth = Math.min(300, k.width() - 160);
-    const sliderHeight = k.width() < 600 ? 16 : 12;
-    const sliderY = k.height() - (k.width() < 600 ? 40 : 35);
-    const sliderX = k.width() < 600 ? 30 : 80;
-
-    // Slider track
-    const sliderTrack = k.add([
-      k.rect(sliderWidth, sliderHeight, { radius: 6 }),
-      k.pos(sliderX, sliderY),
-      k.anchor("left"),
-      k.color(60, 60, 80),
-      k.area(),
-      k.outline(2, k.rgb(100, 100, 120)),
-      k.z(100),
-      "ui"
-    ]);
-
-    // Slider handle (responsive size)
-    const handleSize = k.width() < 600 ? 22 : 18;
-    const sliderHandle = k.add([
-      k.circle(handleSize),
-      k.pos(sliderX + sliderWidth / 2, sliderY + sliderHeight / 2),
-      k.anchor("center"),
-      k.color(k.Color.fromHex(config.color)),
-      k.area(),
-      k.outline(3, k.rgb(255, 255, 255)),
-      k.z(101),
-      "sliderHandle",
-      { isDragging: false }
-    ]);
-
-    // Slider label (responsive)
-    k.add([
-      k.text("MOVE", { size: k.width() < 600 ? 12 : 10 }),
-      k.pos(sliderX + sliderWidth / 2, sliderY - (k.width() < 600 ? 18 : 15)),
+      k.text("SLIDE TO MOVE | TAP TO FIRE", { size: k.width() < 600 ? 14 : 12 }),
+      k.pos(k.width() / 2, k.height() - 20),
       k.anchor("center"),
       k.color(180, 180, 200),
       k.z(100),
       "ui"
     ]);
 
-    // Slider interaction
-    sliderHandle.onHoverUpdate(() => {
-      k.setCursor("pointer");
+    // Touch event handlers
+    k.onMousePress(() => {
+      if (paused) return;
+      touchStartX = k.mousePos().x;
+      touchStartY = k.mousePos().y;
+      lastTouchPos = k.mousePos();
+      isTouchMoving = false;
     });
 
-    sliderHandle.onHoverEnd(() => {
-      if (!sliderHandle.isDragging) {
-        k.setCursor("default");
+    k.onMouseRelease(() => {
+      if (paused) return;
+      
+      // If didn't move much, it's a tap - FIRE!
+      if (!isTouchMoving && touchStartX !== null && touchStartY !== null) {
+        const dx = Math.abs(k.mousePos().x - touchStartX);
+        const dy = Math.abs(k.mousePos().y - touchStartY);
+        
+        if (dx < touchMoveThreshold && dy < touchMoveThreshold) {
+          shoot();
+        }
       }
-    });
-
-    sliderHandle.onUpdate(() => {
-      // Update slider based on mouse if dragging
-      if (sliderHandle.isDragging && k.isMouseDown()) {
-        const mouseX = k.mousePos().x;
-        const minX = sliderX;
-        const maxX = sliderX + sliderWidth;
-        const clampedX = Math.max(minX, Math.min(maxX, mouseX));
-        sliderHandle.pos.x = clampedX;
-
-        // Update player position based on slider
-        const sliderPercent = (clampedX - minX) / sliderWidth;
-        const margin = 30;
-        player.pos.x = margin + sliderPercent * (k.width() - margin * 2);
-      }
-
-      // Stop dragging when mouse released
-      if (!k.isMouseDown() && sliderHandle.isDragging) {
-        sliderHandle.isDragging = false;
-        k.setCursor("default");
-      }
-
-      // Sync slider with keyboard movement
-      if (!sliderHandle.isDragging) {
-        const margin = 30;
-        const playerPercent = (player.pos.x - margin) / (k.width() - margin * 2);
-        sliderHandle.pos.x = sliderX + playerPercent * sliderWidth;
-      }
-    });
-
-    sliderHandle.onMousePress(() => {
-      sliderHandle.isDragging = true;
-    });
-
-    // Click on track to move slider
-    sliderTrack.onClick(() => {
-      const mouseX = k.mousePos().x;
-      const minX = sliderX;
-      const maxX = sliderX + sliderWidth;
-      const clampedX = Math.max(minX, Math.min(maxX, mouseX));
-      sliderHandle.pos.x = clampedX;
-
-      // Update player position
-      const sliderPercent = (clampedX - minX) / sliderWidth;
-      const margin = 30;
-      player.pos.x = margin + sliderPercent * (k.width() - margin * 2);
+      
+      touchStartX = null;
+      touchStartY = null;
+      lastTouchPos = null;
+      isTouchMoving = false;
     });
 
     // Movement and player update - HORIZONTAL ONLY (bottom shooter)
@@ -326,7 +244,21 @@ export function createGameScene(k, gameState) {
 
       const moveDir = k.vec2(0, 0);
 
-      // Only left-right movement
+      // Touch sliding control
+      if (k.isMouseDown() && lastTouchPos !== null) {
+        const currentPos = k.mousePos();
+        const dx = currentPos.x - lastTouchPos.x;
+        
+        // If moved more than threshold, it's sliding
+        if (Math.abs(dx) > 2) {
+          isTouchMoving = true;
+          moveDir.x = dx * 0.5; // Smooth movement based on slide velocity
+        }
+        
+        lastTouchPos = currentPos;
+      }
+
+      // Keyboard movement (still available)
       if (k.isKeyDown("left") || k.isKeyDown("a")) moveDir.x -= 1;
       if (k.isKeyDown("right") || k.isKeyDown("d")) moveDir.x += 1;
 
