@@ -13,84 +13,87 @@ function getGameSize() {
   const maxHeight = 600;
   const aspectRatio = maxWidth / maxHeight;
   
-  let width = Math.min(window.innerWidth, maxWidth);
-  let height = Math.min(window.innerHeight, maxHeight);
+  const containerWidth = window.innerWidth;
+  const containerHeight = window.innerHeight;
   
-  // Maintain aspect ratio
-  if (width / height > aspectRatio) {
-    width = height * aspectRatio;
-  } else {
+  let width = maxWidth;
+  let height = maxHeight;
+  
+  // Scale down for smaller screens
+  if (containerWidth < maxWidth || containerHeight < maxHeight) {
+    width = Math.min(containerWidth, maxWidth);
     height = width / aspectRatio;
+    
+    // If height exceeds container, scale by height instead
+    if (height > containerHeight) {
+      height = containerHeight;
+      width = height * aspectRatio;
+    }
   }
   
-  return { width: Math.floor(width), height: Math.floor(height) };
+  return { 
+    width: Math.floor(width), 
+    height: Math.floor(height),
+    scale: Math.min(width / maxWidth, 1)
+  };
 }
 
 const size = getGameSize();
 
 // Initialize Kaboom
 const k = kaboom({
-  width: size.width,
-  height: size.height,
-  canvas: document.querySelector("#game-container") ? undefined : undefined,
+  width: 800,
+  height: 600,
   background: [20, 20, 40],
-  scale: 1,
+  scale: size.scale,
   crisp: true,
-  touchToMouse: true, // Enable touch controls
+  touchToMouse: true,
   global: false
 });
 
 // Hide loading screen
-setTimeout(() => {
-  const loading = document.getElementById('loading');
-  if (loading) loading.classList.add('hidden');
-}, 500);
-
-// Load custom character images (if they exist in /public folder)
-// These will be used instead of geometric shapes
-try {
-  k.loadSprite("ncp", "/ncp.png");
-} catch (e) {
-  console.log("NCP sprite not found, using default");
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const loading = document.getElementById('loading');
+      if (loading) loading.classList.add('hidden');
+    }, 100);
+  });
 }
 
-try {
-  k.loadSprite("bnp", "/bnp.png");
-} catch (e) {
-  console.log("BNP sprite not found, using default");
-}
+// Load custom character images with error handling
+const imageSize = 64; // Standard size for all images
 
-try {
-  k.loadSprite("jamat", "/jamat.png");
-} catch (e) {
-  console.log("JAMAT sprite not found, using default");
-}
+k.loadRoot("/");
 
-try {
-  k.loadSprite("bal-enemy", "/bal-enemy.png");
-} catch (e) {
-  console.log("BAL enemy sprite not found, using default");
-}
+// Load sprites with proper error handling
+const loadSpriteWithFallback = (name, path) => {
+  try {
+    k.loadSprite(name, path);
+  } catch (e) {
+    console.log(`${name} sprite not found, will use default shapes`);
+  }
+};
+
+loadSpriteWithFallback("ncp", "/ncp.png");
+loadSpriteWithFallback("bnp", "/bnp.png");
+loadSpriteWithFallback("jamat", "/jamat.png");
+loadSpriteWithFallback("bal-enemy", "/bal-enemy.png");
 
 // Register scenes
 createSelectScene(k, gameState);
 createGameScene(k, gameState);
 
-// Handle window resize for mobile
-window.addEventListener('resize', () => {
-  const newSize = getGameSize();
-  // Note: Kaboom doesn't support dynamic resize well, so we reload
-  if (Math.abs(newSize.width - size.width) > 50 || Math.abs(newSize.height - size.height) > 50) {
-    location.reload();
-  }
-});
-
-// Prevent pull-to-refresh on mobile
-document.body.addEventListener('touchmove', (e) => {
-  if (e.touches.length > 1) {
+// Prevent default touch behaviors
+if (typeof document !== 'undefined') {
+  document.addEventListener('touchmove', (e) => {
     e.preventDefault();
-  }
-}, { passive: false });
+  }, { passive: false });
+
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+  });
+}
 
 // Start with character selection
 k.go("select");

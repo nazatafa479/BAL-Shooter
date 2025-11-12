@@ -30,8 +30,9 @@ export function createGameScene(k, gameState) {
     }
 
     // Player setup with visual representation - positioned at BOTTOM
+    const playerSize = 40;
     const playerShape = k.add([
-      k.rect(35, 35, { radius: 5 }),
+      k.rect(playerSize, playerSize, { radius: 5 }),
       k.pos(k.width() / 2, k.height() - 80),
       k.area(),
       k.anchor("center"),
@@ -50,17 +51,34 @@ export function createGameScene(k, gameState) {
 
     // Try to use custom sprite for player
     let playerDetail;
+    let hasCustomSprite = false;
+    
     try {
-      playerDetail = k.add([
-        k.sprite(config.id),
-        k.pos(k.width() / 2, k.height() - 80),
-        k.anchor("center"),
-        k.scale(0.5),
-        k.z(11),
-        "playerDetail"
-      ]);
+      const spriteCheck = k.getSprite(config.id);
+      if (spriteCheck) {
+        playerDetail = k.add([
+          k.sprite(config.id),
+          k.pos(k.width() / 2, k.height() - 80),
+          k.anchor("center"),
+          k.z(11),
+          "playerDetail"
+        ]);
+        
+        // Scale to consistent size
+        if (spriteCheck.width && spriteCheck.height) {
+          const scale = Math.min(playerSize / spriteCheck.width, playerSize / spriteCheck.height);
+          playerDetail.scale = k.vec2(scale, scale);
+        } else {
+          playerDetail.scale = k.vec2(0.6, 0.6);
+        }
+        hasCustomSprite = true;
+      }
     } catch (e) {
-      // Fallback to party logo if no custom image
+      // No custom sprite available
+    }
+    
+    // Fallback to party logo if no custom image
+    if (!hasCustomSprite) {
       if (config.id === "ncp") {
         playerDetail = k.add([
           k.polygon([
@@ -483,17 +501,27 @@ export function createGameScene(k, gameState) {
         }
       ]);
 
-      // Try to use custom BAL sprite
+      // Try to use custom BAL sprite with consistent sizing
       let enemySprite = null;
-      try {
+      const enemySize = 40;
+      const spriteCheck = k.getSprite("bal-enemy");
+      
+      if (spriteCheck) {
         enemySprite = k.add([
           k.sprite("bal-enemy"),
           k.pos(pos),
           k.anchor("center"),
-          k.scale(0.5),
           k.z(9)
         ]);
-      } catch (e) {
+        
+        // Scale to consistent size
+        if (spriteCheck.width && spriteCheck.height) {
+          const scale = Math.min(enemySize / spriteCheck.width, enemySize / spriteCheck.height);
+          enemySprite.scale = k.vec2(scale, scale);
+        } else {
+          enemySprite.scale = k.vec2(0.5, 0.5);
+        }
+      } else {
         // Fallback to BAL text
         enemySprite = k.add([
           k.text("BAL", { size: 12 }),

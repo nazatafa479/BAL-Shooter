@@ -81,7 +81,7 @@ export function createSelectScene(k, gameState) {
 
       // Character visual representation (party symbol/flag or custom image)
       const charVisual = k.add([
-        k.rect(50, 50, { radius: 8 }),
+        k.rect(60, 60, { radius: 8 }),
         k.pos(cardX + cardWidth / 2, cardY + 70),
         k.anchor("center"),
         k.color(k.Color.fromHex(char.color)),
@@ -94,15 +94,31 @@ export function createSelectScene(k, gameState) {
       let customSprite = null;
       
       try {
-        customSprite = k.add([
-          k.sprite(spriteKey),
-          k.pos(cardX + cardWidth / 2, cardY + 70),
-          k.anchor("center"),
-          k.scale(0.6),
-          k.z(7)
-        ]);
+        // Check if sprite exists by trying to get it
+        const hasSprite = k.getSprite(spriteKey);
+        if (hasSprite) {
+          customSprite = k.add([
+            k.sprite(spriteKey),
+            k.pos(cardX + cardWidth / 2, cardY + 70),
+            k.anchor("center"),
+            k.scale(1),
+            k.z(7),
+            { maxWidth: 60, maxHeight: 60 }
+          ]);
+          
+          // Ensure consistent size
+          const spriteData = hasSprite;
+          if (spriteData && spriteData.width && spriteData.height) {
+            const scale = Math.min(60 / spriteData.width, 60 / spriteData.height);
+            customSprite.scale = k.vec2(scale, scale);
+          }
+        }
       } catch (e) {
-        // If no custom image, use default symbols
+        // Sprite doesn't exist, will use fallback
+      }
+      
+      // If no custom sprite loaded, use default symbols
+      if (!customSprite) {
         if (char.id === "ncp") {
           // NCP - Green with star
           k.add([
@@ -162,8 +178,8 @@ export function createSelectScene(k, gameState) {
       charVisual.onUpdate(() => {
         charVisual.pulseTime += k.dt() * 2;
         const pulse = Math.sin(charVisual.pulseTime) * 2;
-        charVisual.width = 50 + pulse;
-        charVisual.height = 50 + pulse;
+        charVisual.width = 60 + pulse;
+        charVisual.height = 60 + pulse;
       });
 
       // Character name
