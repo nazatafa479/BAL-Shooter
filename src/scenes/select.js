@@ -79,7 +79,7 @@ export function createSelectScene(k, gameState) {
         { index: i, char, originalY: cardY }
       ]);
 
-      // Character visual representation (party symbol/flag)
+      // Character visual representation (party symbol/flag or custom image)
       const charVisual = k.add([
         k.rect(50, 50, { radius: 8 }),
         k.pos(cardX + cardWidth / 2, cardY + 70),
@@ -89,59 +89,73 @@ export function createSelectScene(k, gameState) {
         { pulseTime: 0 }
       ]);
 
-      // Party logo/symbol based on type
-      if (char.id === "ncp") {
-        // NCP - Green with star
-        k.add([
-          k.polygon([
-            k.vec2(0, -15), k.vec2(4, -5), k.vec2(15, -5),
-            k.vec2(6, 2), k.vec2(10, 12), k.vec2(0, 6),
-            k.vec2(-10, 12), k.vec2(-6, 2), k.vec2(-15, -5), k.vec2(-4, -5)
-          ]),
+      // Try to load custom sprite, fallback to party logo/symbol
+      const spriteKey = char.id;
+      let customSprite = null;
+      
+      try {
+        customSprite = k.add([
+          k.sprite(spriteKey),
           k.pos(cardX + cardWidth / 2, cardY + 70),
           k.anchor("center"),
-          k.color(255, 255, 255),
+          k.scale(0.6),
           k.z(7)
         ]);
-      } else if (char.id === "bnp") {
-        // BNP - Orange with wheat sheaf
-        k.add([
-          k.rect(8, 30),
-          k.pos(cardX + cardWidth / 2, cardY + 70),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(7)
-        ]);
-        k.add([
-          k.circle(6),
-          k.pos(cardX + cardWidth / 2 - 8, cardY + 58),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(7)
-        ]);
-        k.add([
-          k.circle(6),
-          k.pos(cardX + cardWidth / 2 + 8, cardY + 58),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(7)
-        ]);
-      } else if (char.id === "jamat") {
-        // Jamat - Brown with crescent
-        k.add([
-          k.circle(12),
-          k.pos(cardX + cardWidth / 2 + 3, cardY + 70),
-          k.anchor("center"),
-          k.color(255, 255, 255),
-          k.z(7)
-        ]);
-        k.add([
-          k.circle(10),
-          k.pos(cardX + cardWidth / 2 + 7, cardY + 70),
-          k.anchor("center"),
-          k.color(k.Color.fromHex(char.color)),
-          k.z(8)
-        ]);
+      } catch (e) {
+        // If no custom image, use default symbols
+        if (char.id === "ncp") {
+          // NCP - Green with star
+          k.add([
+            k.polygon([
+              k.vec2(0, -15), k.vec2(4, -5), k.vec2(15, -5),
+              k.vec2(6, 2), k.vec2(10, 12), k.vec2(0, 6),
+              k.vec2(-10, 12), k.vec2(-6, 2), k.vec2(-15, -5), k.vec2(-4, -5)
+            ]),
+            k.pos(cardX + cardWidth / 2, cardY + 70),
+            k.anchor("center"),
+            k.color(255, 255, 255),
+            k.z(7)
+          ]);
+        } else if (char.id === "bnp") {
+          // BNP - Orange with wheat sheaf
+          k.add([
+            k.rect(8, 30),
+            k.pos(cardX + cardWidth / 2, cardY + 70),
+            k.anchor("center"),
+            k.color(255, 255, 255),
+            k.z(7)
+          ]);
+          k.add([
+            k.circle(6),
+            k.pos(cardX + cardWidth / 2 - 8, cardY + 58),
+            k.anchor("center"),
+            k.color(255, 255, 255),
+            k.z(7)
+          ]);
+          k.add([
+            k.circle(6),
+            k.pos(cardX + cardWidth / 2 + 8, cardY + 58),
+            k.anchor("center"),
+            k.color(255, 255, 255),
+            k.z(7)
+          ]);
+        } else if (char.id === "jamat") {
+          // Jamat - Brown with crescent
+          k.add([
+            k.circle(12),
+            k.pos(cardX + cardWidth / 2 + 3, cardY + 70),
+            k.anchor("center"),
+            k.color(255, 255, 255),
+            k.z(7)
+          ]);
+          k.add([
+            k.circle(10),
+            k.pos(cardX + cardWidth / 2 + 7, cardY + 70),
+            k.anchor("center"),
+            k.color(k.Color.fromHex(char.color)),
+            k.z(8)
+          ]);
+        }
       }
 
       // Pulse animation

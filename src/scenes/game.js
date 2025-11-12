@@ -48,39 +48,51 @@ export function createGameScene(k, gameState) {
       }
     ]);
 
-    // Player party logo
+    // Try to use custom sprite for player
     let playerDetail;
-    if (config.id === "ncp") {
+    try {
       playerDetail = k.add([
-        k.polygon([
-          k.vec2(0, -10), k.vec2(3, -3), k.vec2(10, -3),
-          k.vec2(4, 1), k.vec2(7, 8), k.vec2(0, 4),
-          k.vec2(-7, 8), k.vec2(-4, 1), k.vec2(-10, -3), k.vec2(-3, -3)
-        ]),
+        k.sprite(config.id),
         k.pos(k.width() / 2, k.height() - 80),
         k.anchor("center"),
-        k.color(255, 255, 255),
+        k.scale(0.5),
         k.z(11),
         "playerDetail"
       ]);
-    } else if (config.id === "bnp") {
-      playerDetail = k.add([
-        k.rect(6, 20),
-        k.pos(k.width() / 2, k.height() - 80),
-        k.anchor("center"),
-        k.color(255, 255, 255),
-        k.z(11),
-        "playerDetail"
-      ]);
-    } else {
-      playerDetail = k.add([
-        k.circle(8),
-        k.pos(k.width() / 2 + 2, k.height() - 80),
-        k.anchor("center"),
-        k.color(255, 255, 255),
-        k.z(11),
-        "playerDetail"
-      ]);
+    } catch (e) {
+      // Fallback to party logo if no custom image
+      if (config.id === "ncp") {
+        playerDetail = k.add([
+          k.polygon([
+            k.vec2(0, -10), k.vec2(3, -3), k.vec2(10, -3),
+            k.vec2(4, 1), k.vec2(7, 8), k.vec2(0, 4),
+            k.vec2(-7, 8), k.vec2(-4, 1), k.vec2(-10, -3), k.vec2(-3, -3)
+          ]),
+          k.pos(k.width() / 2, k.height() - 80),
+          k.anchor("center"),
+          k.color(255, 255, 255),
+          k.z(11),
+          "playerDetail"
+        ]);
+      } else if (config.id === "bnp") {
+        playerDetail = k.add([
+          k.rect(6, 20),
+          k.pos(k.width() / 2, k.height() - 80),
+          k.anchor("center"),
+          k.color(255, 255, 255),
+          k.z(11),
+          "playerDetail"
+        ]);
+      } else {
+        playerDetail = k.add([
+          k.circle(8),
+          k.pos(k.width() / 2 + 2, k.height() - 80),
+          k.anchor("center"),
+          k.color(255, 255, 255),
+          k.z(11),
+          "playerDetail"
+        ]);
+      }
     }
 
     const player = playerShape;
@@ -153,10 +165,11 @@ export function createGameScene(k, gameState) {
       "ui"
     ]);
 
-    // FIRE BUTTON - visible on screen
+    // FIRE BUTTON - visible on screen (mobile-friendly)
+    const fireButtonSize = k.width() < 600 ? 50 : 40;
     const fireButton = k.add([
-      k.circle(40),
-      k.pos(k.width() - 80, k.height() - 80),
+      k.circle(fireButtonSize),
+      k.pos(k.width() - fireButtonSize - 30, k.height() - fireButtonSize - 30),
       k.anchor("center"),
       k.color(255, 80, 80),
       k.area(),
@@ -166,8 +179,8 @@ export function createGameScene(k, gameState) {
     ]);
 
     k.add([
-      k.text("FIRE", { size: 16 }),
-      k.pos(k.width() - 80, k.height() - 80),
+      k.text("FIRE", { size: k.width() < 600 ? 18 : 16 }),
+      k.pos(k.width() - fireButtonSize - 30, k.height() - fireButtonSize - 30),
       k.anchor("center"),
       k.color(255, 255, 255),
       k.z(101),
@@ -189,11 +202,11 @@ export function createGameScene(k, gameState) {
       k.setCursor("default");
     });
 
-    // SLIDER CONTROL - for moving character left/right
-    const sliderWidth = 300;
-    const sliderHeight = 12;
-    const sliderY = k.height() - 35;
-    const sliderX = 80;
+    // SLIDER CONTROL - for moving character left/right (responsive)
+    const sliderWidth = Math.min(300, k.width() - 160);
+    const sliderHeight = k.width() < 600 ? 16 : 12;
+    const sliderY = k.height() - (k.width() < 600 ? 40 : 35);
+    const sliderX = k.width() < 600 ? 30 : 80;
 
     // Slider track
     const sliderTrack = k.add([
@@ -201,14 +214,16 @@ export function createGameScene(k, gameState) {
       k.pos(sliderX, sliderY),
       k.anchor("left"),
       k.color(60, 60, 80),
+      k.area(),
       k.outline(2, k.rgb(100, 100, 120)),
       k.z(100),
       "ui"
     ]);
 
-    // Slider handle
+    // Slider handle (responsive size)
+    const handleSize = k.width() < 600 ? 22 : 18;
     const sliderHandle = k.add([
-      k.circle(18),
+      k.circle(handleSize),
       k.pos(sliderX + sliderWidth / 2, sliderY + sliderHeight / 2),
       k.anchor("center"),
       k.color(k.Color.fromHex(config.color)),
@@ -219,10 +234,10 @@ export function createGameScene(k, gameState) {
       { isDragging: false }
     ]);
 
-    // Slider label
+    // Slider label (responsive)
     k.add([
-      k.text("MOVE", { size: 10 }),
-      k.pos(sliderX + sliderWidth / 2, sliderY - 15),
+      k.text("MOVE", { size: k.width() < 600 ? 12 : 10 }),
+      k.pos(sliderX + sliderWidth / 2, sliderY - (k.width() < 600 ? 18 : 15)),
       k.anchor("center"),
       k.color(180, 180, 200),
       k.z(100),
@@ -468,20 +483,32 @@ export function createGameScene(k, gameState) {
         }
       ]);
 
-      // BAL text on enemy
-      const enemyLabel = k.add([
-        k.text("BAL", { size: 12 }),
-        k.pos(pos),
-        k.anchor("center"),
-        k.color(255, 255, 255),
-        k.z(9)
-      ]);
+      // Try to use custom BAL sprite
+      let enemySprite = null;
+      try {
+        enemySprite = k.add([
+          k.sprite("bal-enemy"),
+          k.pos(pos),
+          k.anchor("center"),
+          k.scale(0.5),
+          k.z(9)
+        ]);
+      } catch (e) {
+        // Fallback to BAL text
+        enemySprite = k.add([
+          k.text("BAL", { size: 12 }),
+          k.pos(pos),
+          k.anchor("center"),
+          k.color(255, 255, 255),
+          k.z(9)
+        ]);
+      }
 
-      enemyLabel.onUpdate(() => {
+      enemySprite.onUpdate(() => {
         if (enemy.exists()) {
-          enemyLabel.pos = enemy.pos;
+          enemySprite.pos = enemy.pos;
         } else {
-          k.destroy(enemyLabel);
+          k.destroy(enemySprite);
         }
       });
 
@@ -511,8 +538,8 @@ export function createGameScene(k, gameState) {
         enemy.move(k.vec2(0, 1).scale(enemy.speed));
 
         // Update label position
-        if (enemyLabel.exists()) {
-          enemyLabel.pos = enemy.pos;
+        if (enemySprite.exists()) {
+          enemySprite.pos = enemy.pos;
         }
 
         // Update health bar
@@ -531,7 +558,7 @@ export function createGameScene(k, gameState) {
 
       // Cleanup when enemy is destroyed
       enemy.onDestroy(() => {
-        if (enemyLabel.exists()) k.destroy(enemyLabel);
+        if (enemySprite.exists()) k.destroy(enemySprite);
         if (enemyHealthBg.exists()) k.destroy(enemyHealthBg);
         if (enemyHealthBar.exists()) k.destroy(enemyHealthBar);
       });
